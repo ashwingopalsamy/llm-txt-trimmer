@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="Trim formatting waste from text before sending it to an LLM.">
+  <title>llmtrim</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="llmtrim home">
+      <span class="brand-mark" aria-hidden="true">⌁</span>
+      <span>llmtrim</span>
+    </a>
+
+    <div class="topbar-actions">
+      <span class="privacy-note"><span class="status-dot" aria-hidden="true"></span>No persistence</span>
+      <button class="icon-button" id="theme-toggle" type="button" aria-label="Switch color theme" title="Switch color theme">
+        <svg class="theme-icon theme-icon-light" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42"></path>
+        </svg>
+        <svg class="theme-icon theme-icon-dark" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M20.5 15.2A8.5 8.5 0 0 1 8.8 3.5 8.5 8.5 0 1 0 20.5 15.2Z"></path>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="page-shell">
+    <section class="intro" aria-labelledby="page-title">
+      <div>
+        <h1 id="page-title">Less formatting. Same meaning.</h1>
+        <p>Paste text on the left. A compacted version appears on the right as you type.</p>
+      </div>
+      <div class="mode-switch" role="group" aria-label="Compaction mode">
+        <button type="button" class="mode-button active" data-mode="safe" aria-pressed="true" title="Only remove redundant blank space">Safe</button>
+        <button type="button" class="mode-button" data-mode="compact" aria-pressed="false" title="Also join wrapped prose lines">Compact</button>
+        <button type="button" class="mode-button" data-mode="dense" aria-pressed="false" title="Collapse redundant whitespace outside protected structures">Dense</button>
+      </div>
+    </section>
+
+    <section class="workspace" aria-label="Text trimmer">
+      <article class="editor-panel">
+        <div class="panel-header">
+          <div>
+            <span class="eyebrow">Original</span>
+            <span class="counter" id="input-counter">0 characters</span>
+          </div>
+          <div class="panel-actions">
+            <label class="button button-secondary file-button" for="file-input">Open file</label>
+            <input id="file-input" class="visually-hidden" type="file" accept=".txt,.md,.markdown,text/plain,text/markdown">
+            <button class="button button-secondary" id="clear-button" type="button">Clear</button>
+          </div>
+        </div>
+        <textarea id="input-text" spellcheck="false" autocomplete="off" placeholder="Paste text here…" aria-label="Original text"></textarea>
+      </article>
+
+      <article class="editor-panel result-panel">
+        <div class="panel-header">
+          <div>
+            <span class="eyebrow">Trimmed</span>
+            <span class="counter" id="output-counter">0 characters</span>
+          </div>
+          <div class="panel-actions">
+            <button class="button button-secondary" id="download-button" type="button" disabled>Download</button>
+            <button class="button button-primary" id="copy-button" type="button" disabled>Copy result</button>
+          </div>
+        </div>
+        <textarea id="output-text" readonly spellcheck="false" placeholder="Your trimmed text will appear here." aria-label="Trimmed text"></textarea>
+      </article>
+    </section>
+
+    <section class="metrics" aria-label="Savings">
+      <div class="metric">
+        <span class="metric-label">Bytes saved</span>
+        <strong id="bytes-saved">0</strong>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Reduction</span>
+        <strong id="saved-percent">0%</strong>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Whitespace</span>
+        <strong id="whitespace-change">0 → 0</strong>
+      </div>
+      <div class="metric">
+        <span class="metric-label">Token proxy</span>
+        <strong id="token-change">0 → 0</strong>
+      </div>
+    </section>
+
+    <div class="footnote-row">
+      <p>Code fences and YAML front matter are preserved. Token proxy is a rough characters ÷ 4 estimate, not a tokenizer result.</p>
+      <span id="status" class="live-status" role="status" aria-live="polite">Ready</span>
+    </div>
+  </main>
+
+  <script src="/app.js" defer></script>
+</body>
+</html>
