@@ -1,51 +1,31 @@
 package main
 
 import (
-	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
-	"os/signal"
-	"syscall"
-	"time"
 
 	"github.com/ashwingopalsamy/llm-txt-trimmer/internal/compact"
-	"github.com/ashwingopalsamy/llm-txt-trimmer/internal/webapp"
 )
 
 func main() {
-	if len(os.Args) > 1 && os.Args[1] == "serve" {
-		runServer(os.Args[2:])
-		return
+	var (
+		modeFlag = flag.String("mode", "safe", "compaction mode: safe, compact, or dense")
+		outPath  = flag.String("o", "", "write output to file instead of stdout")
+		stats    = flag.Bool("stats", false, "print size statistics to stderr")
+	)
+	flag.Usage = func() {
+		fmt.Fprintf(flag.CommandLine.Output(), "Usage: llmtrim [flags] [file]\n\nReads stdin when no file is given.\n\n")
+		flag.PrintDefaults()
 	}
-	runCLI(os.Args[1:])
-}
+	flag.Parse()
 
-func runCLI(args []string) {
-	flags := flag.NewFlagSet("llmtrim", flag.ContinueOnError)
-	flags.SetOutput(os.Stderr)
-	modeFlag := flags.String("mode", "safe", "compaction mode: safe, compact, or dense")
-	outPath := flags.String("o", "", "write output to file instead of stdout")
-	stats := flags.Bool("stats", false, "print size statistics to stderr")
-	flags.Usage = func() {
-		fmt.Fprintf(flags.Output(), "Usage: llmtrim [flags] [file]\n       llmtrim serve [flags]\n\nReads stdin when no file is given.\n\n")
-		flags.PrintDefaults()
-	}
-	if err := flags.Parse(args); err != nil {
-		if errors.Is(err, flag.ErrHelp) {
-			return
-		}
-		fatalf("%v", err)
-	}
-
-	if flags.NArg() > 1 {
+	if flag.NArg() > 1 {
 		fatalf("expected at most one input file")
 	}
 
-	input, err := readInput(flags.Args())
+	input, err := readInput(flag.Args())
 	if err != nil {
 		fatalf("read input: %v", err)
 	}
@@ -72,62 +52,6 @@ func runCLI(args []string) {
 			s.TokenProxyBefore(), s.TokenProxyAfter(),
 		)
 	}
-}
-
-func runServer(args []string) {
-	flags := flag.NewFlagSet("llmtrim serve", flag.ContinueOnError)
-	flags.SetOutput(os.Stderr)
-	addr := flags.String("addr", defaultAddr(), "HTTP listen address")
-	flags.Usage = func() {
-		fmt.Fprintf(flags.Output(), "Usage: llmtrim serve [flags]\n\n")
-		flags.PrintDefaults()
-	}
-	if err := flags.Parse(args); err != nil {
-		if errors.Is(err, flag.ErrHelp) {
-			return
-		}
-		fatalf("%v", err)
-	}
-	if flags.NArg() != 0 {
-		fatalf("serve does not accept positional arguments")
-	}
-
-	server := &http.Server{
-		Addr:              *addr,
-		Handler:           webapp.Handler(),
-		ReadHeaderTimeout: 5 * time.Second,
-		IdleTimeout:       60 * time.Second,
-		MaxHeaderBytes:    1 << 20,
-	}
-
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-
-	go func() {
-		<-ctx.Done()
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		_ = server.Shutdown(shutdownCtx)
-	}()
-
-	fmt.Fprintf(os.Stderr, "llmtrim: web UI listening on http://%s\n", displayAddr(*addr))
-	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		fatalf("serve: %v", err)
-	}
-}
-
-func defaultAddr() string {
-	if port := os.Getenv("PORT"); port != "" {
-		return ":" + port
-	}
-	return "127.0.0.1:8080"
-}
-
-func displayAddr(addr string) string {
-	if len(addr) > 0 && addr[0] == ':' {
-		return "localhost" + addr
-	}
-	return addr
 }
 
 func readInput(args []string) ([]byte, error) {
