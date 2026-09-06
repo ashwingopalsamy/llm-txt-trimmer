@@ -1,57 +1,51 @@
 # llmtrim
 
-A tiny, deterministic text compactor for LLM input — available as both a browser UI and a CLI.
-
-Paste text in the web app and `llmtrim` removes formatting waste while preserving code fences, YAML front matter, Markdown structure and UTF-8 text. No model call is involved.
+A tiny, deterministic text compactor for LLM input — available as a zero-cost browser UI and a Go CLI.
 
 ## Web UI
 
-Run locally:
+The web app runs entirely in the browser. Paste text on the left and the compacted result appears instantly on the right.
 
-```sh
-go run ./cmd/llmtrim serve
+- no server
+- no database
+- no Docker
+- no model/API calls
+- pasted text never leaves the browser
+- light and dark themes
+- Safe, Compact and Dense modes
+- copy and `.txt` download
+- `.txt` / Markdown file input
+- byte, whitespace and rough token-proxy savings
+- responsive two-column → single-column layout
+
+The static site lives in [`docs/`](./docs) so it can be hosted free with GitHub Pages.
+
+### Publish with GitHub Pages
+
+In the repository:
+
+1. Open **Settings → Pages**.
+2. Under **Build and deployment**, choose **Deploy from a branch**.
+3. Select `main` and `/docs`.
+4. Save.
+
+The site will be available at:
+
+```text
+https://ashwingopalsamy.github.io/llm-txt-trimmer/
 ```
 
-Then open `http://localhost:8080`.
+No runtime hosting or container is required.
 
-Or install once:
+## CLI
+
+Install:
 
 ```sh
 go install github.com/ashwingopalsamy/llm-txt-trimmer/cmd/llmtrim@latest
-llmtrim serve
 ```
 
-The UI provides:
-
-- live two-column original → trimmed editing
-- Safe, Compact and Dense modes
-- light and dark themes
-- copy and `.txt` download actions
-- `.txt` / Markdown file input
-- byte, whitespace and rough token-proxy savings
-- responsive single-column layout on narrow screens
-- no persistence or database
-
-The web server uses the same Go compaction engine as the CLI, so browser and CLI output stay consistent.
-
-### Deploy
-
-`llmtrim serve` honors the `PORT` environment variable automatically. A minimal multi-stage Docker image is included:
-
-```sh
-docker build -t llmtrim .
-docker run --rm -p 8080:8080 llmtrim
-```
-
-Health check:
-
-```text
-GET /healthz
-```
-
-The trim endpoint accepts up to 4 MiB per request and does not persist submitted text.
-
-## CLI
+Use:
 
 ```sh
 cat prompt.md | llmtrim
@@ -70,11 +64,9 @@ llmtrim --mode compact -o prompt.min.md prompt.md
 
 ## Design constraints
 
-- Go standard library only
-- one executable for CLI + web server
-- no frontend build system
-- embedded HTML/CSS/JavaScript
-- stdin/stdout friendly
+- Go CLI uses only the standard library
+- web UI is plain HTML/CSS/JavaScript with no build system
+- stdin/stdout friendly CLI
 - UTF-8 / Tamil-safe
 - preserves fenced code verbatim
 - preserves YAML front matter verbatim
